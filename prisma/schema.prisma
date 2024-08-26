@@ -1,0 +1,41 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Group {
+  id           Int          @id @default(autoincrement())
+  name         String
+  password     String
+  imageUrl     String?
+  isPublic     Boolean
+  introduction String?
+  likeCount    Int          @default(0)
+  postCount    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  badgeCount   Int          @default(0)
+
+  badges       GroupBadge[]  
+}
+
+model Badge {
+  id       Int          @id @default(autoincrement())
+  name     String
+  imageUrl String?
+
+  groups   GroupBadge[]  
+}
+
+model GroupBadge {
+  id       Int     @id @default(autoincrement())
+  groupId  Int
+  badgeId  Int
+  group    Group   @relation(fields: [groupId], references: [id])
+  badge    Badge   @relation(fields: [badgeId], references: [id])
+
+  @@unique([groupId, badgeId]) 
+}
