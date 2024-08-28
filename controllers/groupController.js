@@ -2,6 +2,115 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+
+// 배지 발급 함수
+const awardBadge = async (groupId, badgeName) => {
+    try {
+        const badge = await prisma.badge.findUnique({
+            where: { name: badgeName },
+        });
+
+        if (!badge) {
+            console.log(`Badge ${badgeName} not found.`);
+            return;
+        }
+
+        await prisma.groupBadge.upsert({
+            where: {
+                groupId_badgeId: {
+                    groupId,
+                    badgeId: badge.id,
+                },
+            },
+            update: {},
+            create: {
+                groupId,
+                badgeId: badge.id,
+            },
+        });
+
+        await prisma.group.update({
+            where: { id: groupId },
+            data: {
+                badgeCount: {
+                    increment: 1,
+                },
+            },
+        });
+
+        console.log(`Awarded badge: ${badgeName}`);
+    } catch (error) {
+        console.error('Error awarding badge:', error);
+    }
+};
+
+// 배지 조건 확인 함수
+const checkAndAwardBadges = async (groupId) => {
+    try {
+        const group = await prisma.group.findUnique({
+            where: { id: groupId },
+            include: {
+                posts: true,
+            },
+        });
+
+        if (!group) {
+            console.log(`Group ${groupId} not found.`);
+            return;
+        }
+
+        const posts = group.posts;
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        // 7일 연속 추억 등록 배지 체크
+        const sortedPosts = posts.sort((a, b) => a.createdAt - b.createdAt);
+        let consecutiveDays = 0;
+        let lastDate = null;
+
+        sortedPosts.forEach(post => {
+            const postDate = new Date(post.createdAt).toDateString();
+            if (lastDate && postDate === new Date(lastDate).toDateString()) {
+                consecutiveDays++;
+            } else if (lastDate && new Date(postDate).getDate() > new Date(lastDate).getDate() + 1) {
+                consecutiveDays = 1; // Reset if the gap is more than 1 day
+            } else {
+                consecutiveDays = 1; // Start counting
+            }
+            lastDate = postDate;
+        });
+
+        if (consecutiveDays >= 7) {
+            await awardBadge(groupId, '7일 연속 추억 등록');
+        }
+
+        // 추억 수 20개 이상 등록 배지 체크
+        if (posts.length >= 20) {
+            await awardBadge(groupId, '추억 수 20개 이상 등록');
+        }
+
+        // 그룹 생성 후 1년 달성 배지 체크
+        const creationDate = new Date(group.createdAt);
+        if (creationDate <= oneYearAgo) {
+            await awardBadge(groupId, '그룹 생성 후 1년 달성');
+        }
+
+        // 그룹 공감 1만 개 이상 받기 배지 체크
+        if (group.likeCount >= 10000) {
+            await awardBadge(groupId, '그룹 공감 1만 개 이상 받기');
+        }
+
+        // 추억 공감 1만 개 이상 배지 체크
+        const hasHighLikedPost = posts.some(post => post.likeCount >= 10000);
+        if (hasHighLikedPost) {
+            await awardBadge(groupId, '추억 공감 1만 개 이상 받기');
+        }
+
+    } catch (error) {
+        console.error('Error checking and awarding badges:', error);
+    }
+};
+
 export const registerGroup = async (req, res) => {
     const { name, password, imageUrl, isPublic, introduction } = req.body;
 
