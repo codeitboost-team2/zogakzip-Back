@@ -1,14 +1,6 @@
-// src/controllers/groupController.js
-import {
-    createGroup,
-    getGroupById,
-    updateGroup,
-    deleteGroup,
-    getGroups,
-    verifyGroupPassword,
-    likeGroup,
-    isGroupPublic,
-} from '../models/groupModel.js';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export const registerGroup = async (req, res) => {
     const { name, password, imageUrl, isPublic, introduction } = req.body;
@@ -18,15 +10,17 @@ export const registerGroup = async (req, res) => {
     }
 
     try {
-        const newGroup = await createGroup({
-            name,
-            password,
-            imageUrl,
-            isPublic,
-            introduction,
-            likeCount: 0,
-            postCount: 0,
-            createdAt: new Date().toISOString(),
+        const newGroup = await prisma.group.create({
+            data: {
+                name,
+                password,
+                imageUrl,
+                isPublic,
+                introduction,
+                likeCount: 0,
+                postCount: 0,
+                createdAt: new Date().toISOString(),
+            },
         });
 
         res.status(201).json(newGroup);
@@ -60,7 +54,8 @@ export const listGroups = async (req, res) => {
     };
 
     try {
-        const { totalItemCount, pagedGroups } = await getGroups(filter);
+        const pagedGroups = await prisma.group.findMany(filter);
+        const totalItemCount = await prisma.group.count({ where: filter.where });
 
         const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
 
@@ -80,11 +75,10 @@ export const getGroupDetail = async (req, res) => {
     const { groupId } = req.params;
 
     try {
-        if (isNaN(groupId)) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        const group = await getGroupById(groupId);
+        const group = await prisma.group.findUnique({
+            where: { id: parseInt(groupId, 10) },
+            include: { badges: true }, // 예시로 배지 포함
+        });
 
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });
@@ -114,7 +108,9 @@ export const updateGroupDetail = async (req, res) => {
     const { name, password, imageUrl, isPublic, introduction } = req.body;
 
     try {
-        const group = await getGroupById(groupId);
+        const group = await prisma.group.findUnique({
+            where: { id: parseInt(groupId, 10) },
+        });
 
         if (!group) {
             return res.status(404).json({ message: '존재하지 않습니다.' });
@@ -124,8 +120,12 @@ export const updateGroupDetail = async (req, res) => {
             return res.status(403).json({ message: '비밀번호가 틀렸습니다.' });
         }
 
-        const updateGroup = await updateGroup(groupId, { name, imageUrl, isPublic, introduction });
-        res.status(200).json(updateGroup);
+        const updatedGroup = await prisma.group.update({
+            where: { id: parseInt(groupId, 10) },
+            data: { name, imageUrl, isPublic, introduction },
+        });
+
+        res.status(200).json(updatedGroup);
     } catch (error) {
         console.error('Error updating group:', error);
         res.status(500).json({ message: '서버 오류입니다.' });
@@ -137,7 +137,9 @@ export const deleteGroupById = async (req, res) => {
     const { password } = req.body;
 
     try {
-        const group = await getGroupById(groupId);
+        const group = await prisma.group.findUnique({
+            where: { id: parseInt(groupId, 10) },
+        });
 
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });
@@ -147,7 +149,9 @@ export const deleteGroupById = async (req, res) => {
             return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
         }
 
-        await deleteGroup(groupId);
+        await prisma.group.delete({
+            where: { id: parseInt(groupId, 10) },
+        });
 
         res.status(200).json({ message: "그룹 삭제 성공" });
     } catch (error) {
@@ -161,9 +165,15 @@ export const verifyGroupPasswordHandler = async (req, res) => {
     const { password } = req.body;
 
     try {
-        const isVerified = await verifyGroupPassword(groupId, password);
+        const group = await prisma.group.findUnique({
+            where: { id: parseInt(groupId, 10) },
+        });
 
-        if (isVerified) {
+        if (!group) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+
+        if (group.password === password) {
             return res.status(200).json({ message: '비밀번호가 확인되었습니다' });
         } else {
             return res.status(401).json({ message: '비밀번호가 틀렸습니다' });
@@ -178,13 +188,20 @@ export const likeGroupHandler = async (req, res) => {
     const { groupId } = req.params;
 
     try {
-        const updatedGroup = await likeGroup(groupId);
+        const group = await prisma.group.findUnique({
+            where: { id: parseInt(groupId, 10) },
+        });
 
-        if (updatedGroup) {
-            res.status(200).json({ message: "그룹 공감하기 성공" });
-        } else {
-            res.status(404).json({ message: "존재하지 않습니다" });
+        if (!group) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
         }
+
+        const updatedGroup = await prisma.group.update({
+            where: { id: parseInt(groupId, 10) },
+            data: { likeCount: group.likeCount + 1 },
+        });
+
+        res.status(200).json({ message: "그룹 공감하기 성공", updatedGroup });
     } catch (error) {
         console.error('Error liking group:', error);
         res.status(500).json({ message: "서버 오류입니다" });
@@ -195,7 +212,10 @@ export const isGroupPublicHandler = async (req, res) => {
     const { groupId } = req.params;
 
     try {
-        const group = await isGroupPublic(groupId);
+        const group = await prisma.group.findUnique({
+            where: { id: parseInt(groupId, 10) },
+            select: { id: true, isPublic: true },
+        });
 
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });

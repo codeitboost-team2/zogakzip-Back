@@ -1,45 +1,50 @@
-export const comments = [];
+import { PrismaClient } from '@prisma/client';
 
-function createId() {
-	let id;
-	do {
-		id = Math.floor(Math.random() * 100000).toString();
-	} while (comments.some(comments => comments.id === id));
-	return id;
-}
+const prisma = new PrismaClient();
 
-export const createComment = (postId, data) => {
-    const comment = {
-        id: createId(),
-        postId,
-        createdAt: new Date().toISOString(),
-        ...data,
-    };
-    comments.push(comment);
+export const createComment = async (postId, data) => {
+    const comment = await prisma.comment.create({
+        data: {
+            postId,
+            ...data,
+        },
+    });
     return comment;
 };
 
-export const getCommentsByPostId = (postId) => {
-    return comments.filter(comment => comment.postId === postId);
+export const getCommentsByPostId = async (postId, page, pageSize) => {
+    const skip = (page - 1) * pageSize;
+    const [comments, totalItemCount] = await prisma.$transaction([
+        prisma.comment.findMany({
+            where: { postId },
+            skip,
+            take: pageSize,
+        }),
+        prisma.comment.count({ where: { postId } }),
+    ]);
+    const totalPages = Math.ceil(totalItemCount / pageSize);
+    return { currentPage: page, totalPages, totalItemCount, data: comments };
 };
 
-export const deleteCommentById = (id) => {
-    let found = false;
-    comments.forEach((comment, index) => {
-        if (comment.id === id) {
-            comments.splice(index, 1);
-            found = true;
-        }
-    });
-    return found;
-};
-
-export const updateCommentById = (id, data) => {
-    const index = comments.findIndex(comment => comment.id === id);
-    if (index !== -1) {
-        const updatedComment = { ...comments[index], ...data };
-        comments.splice(index, 1, updatedComment);
-        return updatedComment;
+export const deleteCommentById = async (id) => {
+    try {
+        await prisma.comment.delete({
+            where: { id },
+        });
+        return true;
+    } catch (error) {
+        return false;
     }
-    return null;
+};
+
+export const updateCommentById = async (id, data) => {
+    try {
+        const updatedComment = await prisma.comment.update({
+            where: { id },
+            data,
+        });
+        return updatedComment;
+    } catch (error) {
+        return null;
+    }
 };
