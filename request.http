@@ -88,3 +88,21 @@ Content-Type: image/jpeg
 
 < C:\Users\JEONG\Desktop\example.jpg
 --WebAppBoundary--
+
+### 게시글 등록
+
+POST http://localhost:3000/api/groups/1/posts
+Content-Type: application/json
+
+{
+	"nickname": "JohnDoe",
+	"title": "My First Memory",
+	"content": "This is the content of my first memory.",
+	"postPassword": "mypassword",
+	"groupPassword": "grouppassword",
+	"imageUrl": "http://example.com/image.jpg",
+	"tags": ["vacation", "summer", "blue"],
+	"location": "Seoul",
+	"moment": "2024-02-21",
+	"isPublic": false
+}

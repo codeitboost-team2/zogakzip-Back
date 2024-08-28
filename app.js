@@ -2,6 +2,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import groupRouter from './routes/groupRoutes.js';
 import imageRouter from './routes/imageRoutes.js';
+import postRouter from './routes/postRoutes.js';
+
 
 const app = express();
 
@@ -11,6 +13,8 @@ app.use(bodyParser.json());
 // Routes
 app.use('/api/groups', groupRouter);
 app.use('/api/images', imageRouter);
+app.use('/api/groups/:groupId/posts', postRouter);  
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
