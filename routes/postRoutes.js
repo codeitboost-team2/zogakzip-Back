@@ -1,23 +1,23 @@
+// src/routes/postRoutes.js
 import express from 'express';
 import {
     registerPost,
-    updatePost,
-    deletePost,
-    getPostsList,
+    listPosts,
     getPostDetail,
-    verifyPostPassword,
-    likePost,
-    isGroupPublicHandler,
+    updatePostDetail,
+    deletePostById,
+    verifyPostPasswordHandler,
+    likePostHandler,
 } from '../controllers/postController.js';
 
 const router = express.Router({ mergeParams: true });
+
 router.post('/', registerPost);
-router.put('/:postId', updatePost);
-router.delete('/:postId', deletePost);
-router.get('/', getPostsList);
+router.get('/', listPosts);
 router.get('/:postId', getPostDetail);
-router.post('/:postId/verify-password', verifyPostPassword);
-router.post('/:postId/like', likePost);
-router.get('/:postId/is-public', isGroupPublicHandler);
+router.put('/:postId', updatePostDetail);
+router.delete('/:postId', deletePostById);
+router.post('/:postId/verify-password', verifyPostPasswordHandler);
+router.post('/:postId/like', likePostHandler);
 
 export default router;

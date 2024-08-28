@@ -1,132 +1,183 @@
+// src/controllers/postController.js
 import {
-    createPostBase,
-    getPostBase,
-    updatePostBase,
-    deletePostBase,
-    getPostsInGroup,} from '../models/postModel.js';
+    createPost,
+    getPosts,
+    getPostById,
+    updatePost,
+    deletePost,
+    verifyPostPassword,
+    likePost,
+} from '../models/postModel.js';
 
-export const registerPost = (req, res) => {
+export const registerPost = async (req, res) => {
     const { groupId } = req.params;
-    const { nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment, isPublic } = req.body;
+    const { nickname, title, content, postPassword, imageUrl, location, moment, isPublic } = req.body;
 
-    if (!nickname || !title || !content || !postPassword || !groupPassword || !imageUrl || !moment || typeof isPublic !== 'boolean') {
-        return res.status(400).json({ message: '잘못된 요청입니다' });
+    if (!nickname || !title || !postPassword || !content || !location || !moment || typeof isPublic !== 'boolean') {
+        return res.status(400).json({ message: "잘못된 요청입니다" });
     }
 
-    const post = createPostBase({ groupId, nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment, isPublic });
-    return res.status(201).json(post);
+    try {
+        const newPost = await createPost(groupId, {
+            nickname,
+            title,
+            content,
+            postPassword,
+            imageUrl,
+            
+            location,
+            moment: new Date(moment).toISOString(),
+            isPublic,
+            likeCount: 0,
+            commentCount: 0,
+        });
+
+        res.status(201).json(newPost);
+    } catch (error) {
+        console.error('Error creating post:', error);
+        res.status(500).json({ message: "서버 오류입니다" });
+    }
 };
 
-export const updatePost = (req, res) => {
-    const { postId } = req.params;
-    const { nickname, title, content, postPassword, imageUrl, tags, location, moment, isPublic } = req.body;
-
-    const post = getPostBase(postId);
-    if (!post) return res.status(404).json({ message: '존재하지 않습니다' });
-
-    if (post.postPassword !== postPassword) return res.status(403).json({ message: '비밀번호가 틀렸습니다' });
-
-    const updatedPost = updatePostBase(postId, { nickname, title, content, imageUrl, tags, location, moment, isPublic });
-    return res.status(200).json(updatedPost);
-};
-
-export const deletePost = (req, res) => {
-    const { postId } = req.params;
-    const { postPassword } = req.body;
-
-    const post = getPostBase(postId);
-    if (!post) return res.status(404).json({ message: '존재하지 않습니다' });
-
-    if (post.postPassword !== postPassword) return res.status(403).json({ message: '비밀번호가 틀렸습니다' });
-
-    deletePostBase(postId);
-    return res.status(200).json({ message: '게시글 삭제 성공' });
-};
-
-export const getPostsList = (req, res) => {
+export const listPosts = async (req, res) => {
     const { groupId } = req.params;
     const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic } = req.query;
 
-    let posts = getPostsInGroup(groupId, { page, pageSize, sortBy, keyword, isPublic });
+    const pageNumber = parseInt(page, 10);
+    const pageSizeNumber = parseInt(pageSize, 10);
 
-    // 공개 여부 필터링
-	if (isPublic !== undefined) {
-		posts = posts.filter(function(post) {
-			return post.isPublic === (isPublic === 'true');
-		});
-	}
-
-	// 키워드 검색 (제목 및 태그에서 검색)
-	if (keyword) {
-		posts = posts.filter(function(post) {
-			return post.title.includes(keyword) || (post.tags && post.tags.includes(keyword));
-		});
-	}
-
-	// 정렬
-	if (sortBy === 'latest') {
-		posts.sort(function(a, b) {
-			return new Date(b.createdAt) - new Date(a.createdAt);
-		});
-	} else if (sortBy === 'comment') {
-		posts.sort(function(a, b) {
-			return b.commentCount - a.commentCount;
-		});
-	} else if (sortBy === 'like') {
-		posts.sort(function(a, b) {
-			return b.likeCount - a.likeCount;
-		});
-	}
-
-    return res.status(200).json({
-        currentPage: parseInt(page),
-        filtersApplied: {
-            isPublic: isPublic !== undefined ? isPublic : 'all',
-            keyword: keyword || 'none',
-            sortBy: sortBy || 'latest'
+    const filter = {
+        where: {
+            title: {
+                contains: keyword,
+            },
+            isPublic: isPublic !== undefined ? isPublic === 'true' : undefined,
         },
-        data: posts,
-    });
-};
+        orderBy: {
+            [sortBy === 'mostCommented' ? 'commentCount' :
+            sortBy === 'mostLiked' ? 'likeCount' :
+            'createdAt']: 'desc'
+        },
+        skip: (pageNumber - 1) * pageSizeNumber,
+        take: pageSizeNumber,
+    };
 
-export const getPostDetail = (req, res) => {
-    const { postId } = req.params;
+    try {
+        const { totalItemCount, pagedPosts } = await getPosts(groupId, filter);
 
-    const post = getPostBase(postId);
-    if (!post) return res.status(404).json({ message: '존재하지 않습니다' });
+        const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
 
-    return res.status(200).json(post);
-};
-
-export const verifyPostPassword = (req, res) => {
-    const { postId } = req.params;
-    const { password } = req.body;
-
-    const post = getPostBase(postId);
-    if (!post) return res.status(404).json({ message: '존재하지 않습니다' });
-
-    if (post.postPassword === password) {
-        return res.status(200).json({ message: '비밀번호가 확인되었습니다' });
-    } else {
-        return res.status(401).json({ message: '비밀번호가 틀렸습니다' });
+        res.status(200).json({
+            currentPage: pageNumber,
+            totalPages: totalPages,
+            totalItemCount: totalItemCount,
+            data: pagedPosts,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: '서버 오류입니다' });
     }
 };
 
-export const likePost = (req, res) => {
+export const getPostDetail = async (req, res) => {
     const { postId } = req.params;
 
-    const post = getPostBase(postId);
-    if (!post) return res.status(404).json({ message: '존재하지 않습니다' });
+    try {
+        if (isNaN(postId)) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
 
-    post.likeCount += 1;
-    return res.status(200).json({ message: '게시글 공감하기 성공' });
+        const post = await getPostById(postId);
+
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+
+        return res.status(200).json(post);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "서버 오류입니다" });
+    }
 };
 
-export const isGroupPublicHandler = (req, res) => {
+export const updatePostDetail = async (req, res) => {
+    const { postId } = req.params;
+    const { nickname, title, content, postPassword, imageUrl, location, moment, isPublic } = req.body;
+
+    try {
+        const post = await getPostById(postId);
+
+        if (!post) {
+            return res.status(404).json({ message: '존재하지 않습니다.' });
+        }
+
+        if (post.postPassword !== postPassword) {
+            return res.status(403).json({ message: '비밀번호가 틀렸습니다.' });
+        }
+
+        const updatedPost = await updatePost(postId, { nickname, title, content, imageUrl, location, moment: new Date(moment).toISOString(), isPublic });
+        res.status(200).json(updatedPost);
+    } catch (error) {
+        console.error('Error updating post:', error);
+        res.status(500).json({ message: '서버 오류입니다.' });
+    }
+};
+
+export const deletePostById = async (req, res) => {
+    const { groupId, postId } = req.params;
+    const { postPassword } = req.body;
+
+    try {
+        const post = await getPostById(postId);
+
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+
+        if (post.postPassword !== postPassword) {
+            return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
+        }
+
+        await deletePost(groupId, postId);
+
+        res.status(200).json({ message: "게시글 삭제 성공" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "서버 오류입니다" });
+    }
+};
+
+export const verifyPostPasswordHandler = async (req, res) => {
+    const { postId } = req.params;
+    const { password } = req.body;
+
+    try {
+        const isVerified = await verifyPostPassword(postId, password);
+
+        if (isVerified) {
+            return res.status(200).json({ message: '비밀번호가 확인되었습니다' });
+        } else {
+            return res.status(401).json({ message: '비밀번호가 틀렸습니다' });
+        }
+    } catch (error) {
+        console.error('서버 오류:', error);
+        res.status(500).json({ message: '서버 오류입니다' });
+    }
+};
+
+export const likePostHandler = async (req, res) => {
     const { postId } = req.params;
 
-    const post = getPostBase(postId);
-    if (!post) return res.status(404).json({ message: '존재하지 않습니다' });
+    try {
+        const updatedPost = await likePost(postId);
 
-    return res.status(200).json({ id: post.id, isPublic: post.isPublic });
+        if (updatedPost) {
+            res.status(200).json({ message: "게시글 공감하기 성공" });
+        } else {
+            res.status(404).json({ message: "존재하지 않습니다" });
+        }
+    } catch (error) {
+        console.error('Error liking post:', error);
+        res.status(500).json({ message: "서버 오류입니다" });
+    }
 };
