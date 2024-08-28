@@ -20,7 +20,7 @@ model Group {
   badgeCount   Int          @default(0)
 
   badges       GroupBadge[]
-  posts        Post[]       // Group 모델에 posts 필드 추가  
+  posts        Post[]       
 }
 
 model Badge {
@@ -50,23 +50,24 @@ model Image {
 
 // 게시글 
 model Post {
-  id          Int       @id @default(autoincrement())
-  postPassword  String
-  groupId     Int
-  nickname    String
-  title       String
-  content     String
-  imageUrl    String?
-  location    String?
-  moment      DateTime
-  isPublic    Boolean
-  likeCount   Int       @default(0)
-  commentCount Int      @default(0)
-  createdAt   DateTime  @default(now())
+  id           Int       @id @default(autoincrement())
+  postPassword String
+  groupId      Int
+  nickname     String
+  title        String
+  content      String
+  imageUrl     String?
+  location     String?
+  moment       DateTime
+  isPublic     Boolean
+  likeCount    Int       @default(0)
+  commentCount Int       @default(0)
+  createdAt    DateTime  @default(now())
 
-  group       Group     @relation(fields: [groupId], references: [id])
+  group        Group     @relation(fields: [groupId], references: [id])
   
-  tags        PostTag[]
+  tags         PostTag[]
+  comments     Comment[] // 댓글 관계 추가
 }
 
 // 태그 
@@ -87,3 +88,16 @@ model PostTag {
   @@unique([postId, tagId])
 }
 
+// 댓글 
+model Comment {
+  id              Int      @id @default(autoincrement())
+  postId          Int
+  nickname        String
+  content         String
+  commentPassword String
+  createdAt       DateTime @default(now())
+
+  post            Post     @relation(fields: [postId], references: [id])
+
+  @@index([postId])
+}
