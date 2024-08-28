@@ -6,7 +6,7 @@ export const addComment = async (req, res) => {
     let { postId } = req.params;
     const { nickname, content, commentPassword } = req.body;
 
-    // postId를 정수로 변환
+
     postId = parseInt(postId, 10);  
 
     if (isNaN(postId)) {
@@ -41,7 +41,6 @@ export const getComments = async (req, res) => {
     let { postId } = req.params;
     const { page = 1, pageSize = 10 } = req.query;
 
-    // postId를 정수로 변환
     postId = parseInt(postId, 10);
 
     if (isNaN(postId)) {
@@ -54,7 +53,7 @@ export const getComments = async (req, res) => {
         const postComments = await prisma.comment.findMany({
             where: { postId: postId },
             skip: skip,
-            take: parseInt(pageSize, 10),  // pageSize도 정수로 변환
+            take: parseInt(pageSize, 10),
         });
 
         const totalItemCount = await prisma.comment.count({
@@ -80,7 +79,6 @@ export const deleteComment = async (req, res) => {
     let { postId, commentId } = req.params;
     const { commentPassword } = req.body;
 
-    // postId를 정수로 변환
     postId = parseInt(postId, 10);
     commentId = parseInt(commentId, 10);
 
@@ -115,7 +113,6 @@ export const updateComment = async (req, res) => {
     let { postId, commentId } = req.params;
     const { content, commentPassword } = req.body;
 
-    // postId를 정수로 변환
     postId = parseInt(postId, 10);
     commentId = parseInt(commentId, 10);
 
