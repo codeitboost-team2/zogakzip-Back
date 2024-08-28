@@ -89,6 +89,10 @@ Content-Type: image/jpeg
 < C:\Users\JEONG\Desktop\example.jpg
 --WebAppBoundary--
 
+
+
+###---------게시글----------###
+
 ### 게시글 등록
 
 POST http://localhost:3000/api/groups/1/posts
@@ -96,13 +100,68 @@ Content-Type: application/json
 
 {
 	"nickname": "JohnDoe",
-	"title": "My First Memory",
-	"content": "This is the content of my first memory.",
+	"title": "My First Trip",
+	"content": "this is public memory",
 	"postPassword": "mypassword",
-	"groupPassword": "grouppassword",
 	"imageUrl": "http://example.com/image.jpg",
-	"tags": ["vacation", "summer", "blue"],
+	
 	"location": "Seoul",
 	"moment": "2024-02-21",
+	"isPublic": true
+}
+
+### 게시글 목록 조회(최신순)
+GET http://localhost:3000/api/groups/1/posts?sortBy=latest
+
+### 게시글 목록 조회(좋아요 순)
+GET http://localhost:3000/api/groups/1/posts?sortBy=mostLiked
+
+### 게시글 목록 조회(댓글순)
+GET http://localhost:3000/api/groups/1/posts?sortBy=mostCommented
+
+### 키워드 검색(제목)
+GET http://localhost:3000/api/groups/1/posts?sortBy=latest&keyword=Trip
+
+### 공개 게시글 조회
+GET http://localhost:3000/api/groups/1/posts?sortBy=latest&isPublic=true
+
+### 비공개 게시글 조회
+GET http://localhost:3000/api/groups/1/posts?sortBy=latest&isPublic=false
+
+### 게시글 상세 조회
+GET http://localhost:3000/api/groups/1/posts/2
+
+### 게시글 수정
+PUT http://localhost:3000/api/groups/1/posts/5
+Content-Type: application/json
+
+{
+	"nickname": "JohnDoeUpdated",
+	"title": "My Updated Memory",
+	"content": "This is the updated content of my first memory.",
+	"postPassword": "mypassword",
+	"imageUrl": "http://example.com/image.jpg",
+	
+	"location": "Busan",
+	"moment": "2024-03-21",
 	"isPublic": false
+}
+
+### 게시글 삭제
+DELETE http://localhost:3000/api/groups/1/posts/3
+Content-Type: application/json
+
+{
+	"postPassword": "mypassword"
+}
+
+### 게시글 공감하기
+POST http://localhost:3000/api/groups/1/posts/2/like
+
+### 게시글 권한 확인
+POST http://localhost:3000/api/groups/1/posts/2/verify-password
+Content-Type: application/json
+
+{
+	"password": "mypassword"
 }
