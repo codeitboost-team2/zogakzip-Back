@@ -6,21 +6,24 @@ import postRouter from './routes/postRoutes.js';
 import commentRouter from './routes/commentRoutes.js';
 import cors from 'cors'; 
 
-
 const app = express();
 
 // Body Parser Middleware
 app.use(bodyParser.json());
 
-// cors
+// CORS
 app.use(cors());
+
+// Default route
+app.get('/', (req, res) => {
+  res.send('Welcome to the API');
+});
 
 // Routes
 app.use('/api/groups', groupRouter);
 app.use('/api/images', imageRouter);
 app.use('/api/groups/:groupId/posts', postRouter);
 app.use('/api/posts/:postId/comments', commentRouter);
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
