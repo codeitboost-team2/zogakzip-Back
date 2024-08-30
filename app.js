@@ -25,6 +25,27 @@ app.use('/api/images', imageRouter);
 app.use('/api/groups/:groupId/posts', postRouter);
 app.use('/api/posts/:postId/comments', commentRouter);
 
+
+// 에러 핸들링
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Not Found' });
+});
+
+// Specific Error Handling
+app.use((err, req, res, next) => {
+  if (err.name === 'SequelizeDatabaseError') {
+    res.status(500).json({ error: 'Database Error' });
+  } else {
+    next(err);
+  }
+});
+
+// General Error Handling
+app.use((err, req, res, next) => {
+  console.error(err.stack); // Log the stack trace
+  res.status(500).json({ error: 'Internal Server Error' }); // Send a general error message
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
