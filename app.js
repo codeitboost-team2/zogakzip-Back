@@ -4,12 +4,16 @@ import groupRouter from './routes/groupRoutes.js';
 import imageRouter from './routes/imageRoutes.js';
 import postRouter from './routes/postRoutes.js';
 import commentRouter from './routes/commentRoutes.js';
+import cors from 'cors'; 
 
 
 const app = express();
 
 // Body Parser Middleware
 app.use(bodyParser.json());
+
+// cors
+app.use(cors());
 
 // Routes
 app.use('/api/groups', groupRouter);
