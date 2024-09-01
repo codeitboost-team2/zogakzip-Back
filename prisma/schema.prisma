@@ -1,10 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model Group {
@@ -18,27 +18,25 @@ model Group {
   postCount    Int          @default(0)
   createdAt    DateTime     @default(now())
   badgeCount   Int          @default(0)
-
   badges       GroupBadge[]
-  posts        Post[]       
+  posts        Post[]
 }
 
 model Badge {
   id       Int          @id @default(autoincrement())
   name     String       @unique
   imageUrl String?
-
-  groups   GroupBadge[]  
+  groups   GroupBadge[]
 }
 
 model GroupBadge {
-  id       Int     @id @default(autoincrement())
-  groupId  Int
-  badgeId  Int
-  group    Group   @relation(fields: [groupId], references: [id])
-  badge    Badge   @relation(fields: [badgeId], references: [id])
+  id      Int   @id @default(autoincrement())
+  groupId Int
+  badgeId Int
+  badge   Badge @relation(fields: [badgeId], references: [id])
+  group   Group @relation(fields: [groupId], references: [id])
 
-  @@unique([groupId, badgeId]) 
+  @@unique([groupId, badgeId])
 }
 
 model Image {
@@ -48,7 +46,6 @@ model Image {
   createdAt DateTime @default(now())
 }
 
-// 게시글 
 model Post {
   id           Int       @id @default(autoincrement())
   postPassword String
@@ -63,32 +60,27 @@ model Post {
   likeCount    Int       @default(0)
   commentCount Int       @default(0)
   createdAt    DateTime  @default(now())
-
+  comments     Comment[]
   group        Group     @relation(fields: [groupId], references: [id])
-  
   tags         PostTag[]
-  comments     Comment[] // 댓글 관계 추가
 }
 
-// 태그 
 model Tag {
-  id       Int      @id @default(autoincrement())
-  name     String   @unique
-  posts    PostTag[]
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+  posts PostTag[]
 }
 
-// 게시글-태그 연결 
 model PostTag {
-  id       Int     @id @default(autoincrement())
-  postId   Int
-  tagId    Int
-  post     Post    @relation(fields: [postId], references: [id])
-  tag      Tag     @relation(fields: [tagId], references: [id])
+  id     Int  @id @default(autoincrement())
+  postId Int
+  tagId  Int
+  tag    Tag  @relation(fields: [tagId], references: [id])
+  post   Post @relation(fields: [postId], references: [id])
 
   @@unique([postId, tagId])
 }
 
-// 댓글 
 model Comment {
   id              Int      @id @default(autoincrement())
   postId          Int
@@ -96,7 +88,6 @@ model Comment {
   content         String
   commentPassword String
   createdAt       DateTime @default(now())
-
   post            Post     @relation(fields: [postId], references: [id])
 
   @@index([postId])
