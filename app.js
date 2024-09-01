@@ -29,6 +29,24 @@ app.use('/api/images', imageRouter);
 app.use('/api/groups/:groupId/posts', postRouter);
 app.use('/api/posts/:postId/comments', commentRouter);
 
+//테스트용 데이터베이스 연결 엔드 포인트
+app.get('/test-db-connection', async (req, res) => {
+  try {
+    const result = await prisma.$queryRaw`SELECT 1`;
+    const processedResult = result.map(row => {
+      return Object.fromEntries(
+        Object.entries(row).map(([key, value]) =>
+          typeof value === 'bigint' ? [key, value.toString()] : [key, value]
+        )
+      );
+    });
+    res.json({ success: true, result: processedResult });
+  } catch (error) {
+    console.error('Database connection failed:', error.message);
+    res.status(500).json({ success: false, message: 'Database connection failed', error: error.message });
+  }
+});
+
 // 404 Not Found Handler
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Not Found' });
@@ -50,16 +68,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' }); // Send a general error message
 });
 
-//테스트용 데이터베이스 연결 엔드 포인트
-app.get('/test-db-connection', async (req, res) => {
-  try {
-    const result = await prisma.$queryRaw`SELECT 1`;
-    res.json({ success: true, result });
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    res.status(500).json({ success: false, message: 'Database connection failed', error });
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
