@@ -25,15 +25,15 @@ app.use('/api/images', imageRouter);
 app.use('/api/groups/:groupId/posts', postRouter);
 app.use('/api/posts/:postId/comments', commentRouter);
 
-
-// 에러 핸들링
+// 404 Not Found Handler
 app.use((req, res, next) => {
   res.status(404).json({ error: 'Not Found' });
 });
 
-// Specific Error Handling
+// Specific Error Handling for Prisma Errors
 app.use((err, req, res, next) => {
-  if (err.name === 'SequelizeDatabaseError') {
+  if (err.code && err.code.startsWith('P')) {
+    // Prisma-related error
     res.status(500).json({ error: 'Database Error' });
   } else {
     next(err);
