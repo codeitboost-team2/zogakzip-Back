@@ -1,19 +1,27 @@
-# 2팀 백엔드
+# 🎆조각집
+자신의 추억을 게시글로 올려 소중한 사람들과 공유할 수 있는 추억 기록 및 공유 서비스
 
+*Codeit Boost DSWU 1st - Team 2, Backend*
 
 ## 🚀기술 스택
-+ Node.js
-+ Express
+- **Node.js**
+- **Express**
+- **Prisma**
+
 
 
 ## 📁프로젝트 폴더 구조
 ```
 /zogakzip
-│
-├─data
-├─node_modules
-├─routes
-└─app.js
+C:.
+├─controllers        #비즈니스 로직을 포함한 컨트롤러
+├─models             #데이터 구조와 비즈니스 로직 정의
+├─node_modules       #node 라이브러리리
+├─prisma             #prisma 관련 설정
+│  ├─migrations      #데이터베이스 마이그레이션
+│  └─schema.prisma   #데이터베이스 스키마 정의
+├─routes             #API 엔드포인트에 대한 라우터 정의
+└─app.js             #애플리케이션 진입점
 ```
 
 ## 🏷️컨벤션
@@ -109,6 +117,9 @@ var arr = [1, 2, 3, 4];
 ```
 
 
-## 역할 분담
+## 🖼️아키텍처 다이어그램
+![아키텍처 다이어그램](https://github.com/user-attachments/assets/d6e0368d-ccdf-4487-bb2e-b45e600a4b40)
+
+## 👩‍💻역할 분담
 + 김도원 : 게시글, 댓글 BE
 + 정유진 : 그룹, 배지 BE
