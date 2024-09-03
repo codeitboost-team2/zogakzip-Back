@@ -181,3 +181,23 @@ export const likePostHandler = async (req, res) => {
         res.status(500).json({ message: "서버 오류입니다" });
     }
 };
+
+export const getPostVisibility = async (req, res) => {
+    const { postId } = req.params;
+
+    try {
+        const post = await getPostById(postId);
+
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않는 게시글입니다." });
+        }
+
+        return res.status(200).json({
+            id: post.id,
+            isPublic: post.isPublic,
+        });
+    } catch (error) {
+        console.error('Error fetching post visibility:', error);
+        return res.status(500).json({ message: "서버 오류입니다." });
+    }
+};
