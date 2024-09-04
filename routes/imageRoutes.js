@@ -1,10 +1,15 @@
 import express from 'express';
-import upload from '../models/imageModel.js';
+import multer from 'multer';
 import { uploadImage } from '../controllers/imageController.js';
+
 
 const router = express.Router();
 
-// 이미지 파일 업로드 및 URL 생성
+// Multer 설정 (메모리 저장소 사용)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// 이미지 업로드 라우트
 router.post('/upload', upload.single('image'), uploadImage);
 
 export default router;
