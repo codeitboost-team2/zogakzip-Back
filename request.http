@@ -78,18 +78,27 @@ Content-Type: application/json
 GET http://localhost:3000/api/groups/1/is-public
 Content-Type: application/json
 
-### 이미지 URL 생성
-POST http://localhost:3000/api/images/upload
-Content-Type: multipart/form-data; boundary=WebAppBoundary
 
---WebAppBoundary
+### 이미지 업로드
+POST http://localhost:3000/api/image
+Content-Type: multipart/form-data
+
 Content-Disposition: form-data; name="image"; filename="example.jpg"
 Content-Type: image/jpeg
 
-< C:\Users\JEONG\Desktop\example.jpg
---WebAppBoundary--
+< C:/Users/JEONG/Desktop/example.jpg
 
 
+### Upload Image
+POST http://localhost:3000/api/images/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="image"; filename="example.jpg"
+Content-Type: image/jpeg
+
+< C:/Users/JEONG/Desktop/example.jpg
+--boundary--
 
 ###---------게시글----------###
 
@@ -168,7 +177,7 @@ Content-Type: application/json
 
 ### 게시글 공개 여부 확인 요청
 
-GET http://localhost:3000/api/groups/1/posts/123/visibility
+GET http://localhost:3000/api/groups/1/posts/1/visibility
 Content-Type: application/json
 
 
